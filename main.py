@@ -1,10 +1,8 @@
 from flask import Flask, request, jsonify
-from openai import OpenAI
 import os
+from openai import OpenAI
 
 app = Flask(__name__)
-
-# Creamos el cliente usando la clave que guardaste en Render
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 @app.route("/", methods=["GET"])
@@ -16,13 +14,16 @@ def chat():
     data = request.json
     user_message = data.get("message", "")
 
-    # Mandamos el mensaje del usuario a la IA
-    response = client.responses.create(
-        model="gpt-4.1-mini",
-        input=user_message
+    # Consulta a la IA
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "Eres NutriCheck, un asistente de nutrición amable y preciso."},
+            {"role": "user", "content": user_message}
+        ]
     )
 
-    ai_reply = response.output_text
+    ai_reply = completion.choices[0].message["content"]
 
     return jsonify({"reply": ai_reply})
 
