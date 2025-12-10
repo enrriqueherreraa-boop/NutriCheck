@@ -1,5 +1,3 @@
 flask
-openai
-requests
-pillow
+openai>=1.0.0
 gunicorn
