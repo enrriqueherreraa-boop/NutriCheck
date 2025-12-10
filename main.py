@@ -5,16 +5,17 @@ from openai import OpenAI
 app = Flask(__name__)
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
+# Ruta principal
 @app.route("/", methods=["GET"])
 def home():
     return "NutriCheck API funcionando correctamente con IA."
 
+# Ruta del chat
 @app.route("/chat", methods=["POST"])
 def chat():
     data = request.json
     user_message = data.get("message", "")
 
-    # Consulta a la IA
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
