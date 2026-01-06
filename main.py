@@ -3,58 +3,55 @@ import os
 from openai import OpenAI
 
 app = Flask(__name__)
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-system_prompt = """
+client = OpenAI(api_key=os.environ.get("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"))
+
+SYSTEM_PROMPT = """
 Eres NutriCheck, un asistente de nutrición profesional, empático y conversacional.
 
-Tu función principal es ayudar a los usuarios con temas de nutrición, salud y hábitos alimenticios.
-También puedes responder saludos, despedidas y mensajes generales de forma amable y natural.
-
-Si el usuario hace una pregunta que no está relacionada con nutrición:
-- Responde brevemente y con educación
-- Mantén un tono humano
-- Redirige suavemente la conversación hacia la salud o alimentación
-
-Adapta la longitud de tus respuestas:
-- Mensajes simples → respuestas cortas y amigables
-- Preguntas de salud → respuestas claras y más detalladas
-
-Habla de forma cercana y natural.
-Nunca respondas de manera cortante o robótica.
+Puedes responder saludos, charlas generales y preguntas de nutrición.
+Habla de forma natural, cercana y clara.
+Nunca seas cortante ni robótico.
 """
 
 @app.route("/", methods=["GET"])
 def home():
-    return "NutriCheck API funcionando correctamente con IA."
+    return jsonify({"status": "NutriCheck API funcionando correctamente"})
 
 @app.route("/chat", methods=["POST"])
 def chat():
-    data = request.json or {}
+    try:
+        data = request.get_json()
+        user_message = data.get("message", "")
 
-    user_message = (
-        data.get("message")
-        or data.get("text")
-        or data.get("prompt")
-        or ""
-    )
+        if not user_message:
+            return jsonify({"reply": "¿En qué puedo ayudarte hoy?"})
 
-    completion = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
-        ],
-        temperature=0.7,
-        max_tokens=400,
-        presence_penalty=0.3,
-        frequency_penalty=0.2
-    )
+        response = client.responses.create(
+            model="gpt-4o-mini",
+            input=[
+                {
+                    "role": "system",
+                    "content": SYSTEM_PROMPT
+                },
+                {
+                    "role": "user",
+                    "content": user_message
+                }
+            ],
+            max_output_tokens=400,
+            temperature=0.7
+        )
 
-    ai_reply = completion.choices[0].message["content"]
+        reply = response.output_text
+        return jsonify({"reply": reply})
 
-    return jsonify({"reply": ai_reply})
+    except Exception as e:
+        return jsonify({
+            "error": "Error en el servidor",
+            "details": str(e)
+        }), 500
+
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
